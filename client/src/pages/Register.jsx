@@ -26,7 +26,7 @@ function Register() {
 
     try {
       await api.post("/auth/register", form);
-      toast.success("Registration successful");
+      toast.success("Registration successful. Please sign in.");
       navigate("/");
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
@@ -37,19 +37,19 @@ function Register() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(79,70,229,0.16),_transparent_40%),linear-gradient(135deg,_#f8fafc_0%,_#eef2ff_100%)] px-4 py-8 text-slate-900">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col overflow-hidden rounded-[34px] border border-slate-200 bg-white/90 shadow-[0_24px_90px_rgba(15,23,42,0.10)] backdrop-blur lg:flex-row">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col overflow-hidden rounded-[36px] border border-slate-200 bg-white/90 shadow-[0_24px_90px_rgba(15,23,42,0.10)] backdrop-blur lg:flex-row">
         <div className="flex flex-1 flex-col justify-center bg-gradient-to-br from-indigo-50 via-white to-slate-50 p-8 sm:p-12 lg:p-16">
           <div className="max-w-md">
             <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700"><Sparkles size={14} /> Northstar HR</div>
             <h1 className="mt-6 text-4xl font-semibold tracking-tight text-slate-900">Create your workspace account.</h1>
-            <p className="mt-4 text-lg text-slate-500">Set up your team foundation and start operating with confidence.</p>
+            <p className="mt-4 text-lg leading-8 text-slate-500">Set up your team foundation and start operating with confidence.</p>
           </div>
         </div>
 
         <div className="flex flex-1 items-center justify-center bg-white p-8 sm:p-12">
-          <form onSubmit={handleRegister} className="w-full max-w-md rounded-[26px] border border-slate-200 bg-slate-50/70 p-6 shadow-sm">
+          <form onSubmit={handleRegister} className="w-full max-w-md rounded-[28px] border border-slate-200 bg-slate-50/70 p-6 shadow-sm">
             <h2 className="text-2xl font-semibold text-slate-900">Create account</h2>
-            <p className="mt-2 text-sm text-slate-500">Build your HR workspace in minutes.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">Build your HR workspace in minutes.</p>
 
             <label className="mt-6 block text-sm font-medium text-slate-700">
               Name
@@ -75,7 +75,7 @@ function Register() {
               </div>
             </label>
 
-            <button disabled={loading} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70">
+            <button disabled={loading} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70">
               {loading ? "Creating account..." : "Create account"}
               <ArrowRight size={16} />
             </button>

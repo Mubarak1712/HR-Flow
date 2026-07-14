@@ -25,22 +25,27 @@ const calculateLeaveDeduction = async (employeeId, month) => {
 
 const createSalary = async (req, res) => {
   try {
-    const employee = await Employee.findById(req.body.employee);
+    const { employee: employeeId, month, baseSalary, bonus, allowance, tax, leaveDeduction } = req.body;
+
+    if (!employeeId || !month) {
+      return res.status(400).json({ message: "Employee and month are required" });
+    }
+
+    const employee = await Employee.findById(employeeId);
     if (!employee) return res.status(404).json({ message: "Employee not found" });
 
-    const month = req.body.month;
-    const leaveDeduction =
-      req.body.leaveDeduction !== undefined
-        ? Number(req.body.leaveDeduction)
+    const computedLeaveDeduction =
+      leaveDeduction !== undefined
+        ? Number(leaveDeduction)
         : await calculateLeaveDeduction(employee._id, month);
 
     const salary = await Salary.create({
       employee: employee._id,
-      baseSalary: req.body.baseSalary ?? employee.salary ?? 0,
-      bonus: req.body.bonus || 0,
-      allowance: req.body.allowance || 0,
-      tax: req.body.tax || 0,
-      leaveDeduction,
+      baseSalary: Number(baseSalary ?? employee.salary ?? 0),
+      bonus: Number(bonus || 0),
+      allowance: Number(allowance || 0),
+      tax: Number(tax || 0),
+      leaveDeduction: computedLeaveDeduction,
       month,
     });
 
@@ -80,13 +85,20 @@ const getSalaries = async (req, res) => {
 
 const updateSalary = async (req, res) => {
   try {
-    const salary = await Salary.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    }).populate("employee", "name employeeId department");
-
+    const salary = await Salary.findById(req.params.id);
     if (!salary) return res.status(404).json({ message: "Salary not found" });
-    res.status(200).json({ message: "Salary updated successfully", salary });
+
+    // apply updates
+    salary.set(req.body);
+
+    // if leaveDeduction not provided but month changed or missing, recalculate
+    if (req.body.leaveDeduction === undefined && salary.month) {
+      salary.leaveDeduction = await calculateLeaveDeduction(salary.employee, salary.month);
+    }
+
+    await salary.save();
+    const populated = await Salary.findById(salary._id).populate("employee", "name employeeId department");
+    res.status(200).json({ message: "Salary updated successfully", salary: populated });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

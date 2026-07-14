@@ -91,7 +91,7 @@ const employeeSchema = new mongoose.Schema(
   }
 );
 
-employeeSchema.pre("validate", function (next) {
+employeeSchema.pre("validate", function () {
   if (!this.designation && this.position) {
     this.designation = this.position;
   }
@@ -99,8 +99,6 @@ employeeSchema.pre("validate", function (next) {
   if (!this.position && this.designation) {
     this.position = this.designation;
   }
-
-  next();
 });
 
 module.exports = mongoose.model("Employee", employeeSchema);

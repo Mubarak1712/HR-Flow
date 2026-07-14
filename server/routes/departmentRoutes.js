@@ -13,7 +13,7 @@ const router = express.Router();
 
 router.post("/", authMiddleware.protect, authMiddleware.authorize("Admin"), createDepartment);
 
-router.get("/", authMiddleware.protect, getDepartments);
+router.get("/", authMiddleware.protect, authMiddleware.authorize("Admin"), getDepartments);
 router.put("/:id", authMiddleware.protect, authMiddleware.authorize("Admin"), updateDepartment);
 router.delete("/:id", authMiddleware.protect, authMiddleware.authorize("Admin"), deleteDepartment);
 

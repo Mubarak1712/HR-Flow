@@ -15,17 +15,12 @@ function Departments() {
   const [form, setForm] = useState({ name: "", description: "", manager: "" });
   const [editingId, setEditingId] = useState(null);
 
-  useEffect(() => {
-    fetchDepartments();
-    fetchEmployees();
-  }, []);
-
   const fetchDepartments = async () => {
     try {
       setLoading(true);
       const res = await api.get("/departments");
       setDepartments(res.data.departments || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load departments");
     } finally {
       setLoading(false);
@@ -36,10 +31,19 @@ function Departments() {
     try {
       const res = await api.get("/employees");
       setEmployees(res.data.employees || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load employees");
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchDepartments();
+      void fetchEmployees();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -84,7 +88,7 @@ function Departments() {
       await api.delete(`/departments/${id}`);
       toast.success("Department deleted");
       fetchDepartments();
-    } catch (error) {
+    } catch {
       toast.error("Delete failed");
     }
   };

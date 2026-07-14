@@ -8,18 +8,28 @@ import api from "../services/api";
 function Settings() {
   const [settings, setSettings] = useState({ companyName: "", workingHours: "", monthlyLeaveLimit: "", salaryDeductionPerExtraLeave: "", theme: "Light" });
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
   const fetchSettings = async () => {
     try {
       const res = await api.get("/settings");
-      setSettings(res.data.settings || settings);
-    } catch (error) {
+      setSettings({
+        companyName: res.data.settings?.companyName || "",
+        workingHours: res.data.settings?.workingHours || "",
+        monthlyLeaveLimit: res.data.settings?.monthlyLeaveLimit || "",
+        salaryDeductionPerExtraLeave: res.data.settings?.salaryDeductionPerExtraLeave || "",
+        theme: res.data.settings?.theme || "Light",
+      });
+    } catch {
       toast.error("Failed to load settings");
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchSettings();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const handleChange = (e) => {
     setSettings({ ...settings, [e.target.name]: e.target.value });

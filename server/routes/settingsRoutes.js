@@ -9,7 +9,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.get("/", authMiddleware.protect, getCompanySettings);
+router.get("/", authMiddleware.protect, authMiddleware.authorize("Admin"), getCompanySettings);
 
 router.put("/", authMiddleware.protect, authMiddleware.authorize("Admin"), updateCompanySettings);
 

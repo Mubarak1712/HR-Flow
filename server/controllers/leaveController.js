@@ -8,13 +8,38 @@ const createLeave = async (req, res) => {
     let employeeId = req.body.employee;
 
     if (req.user.role === "Employee") {
-      const employee = await getEmployeeForUser(req.user);
-      if (!employee) return res.status(404).json({ message: "Employee profile not found" });
+      let employee = await getEmployeeForUser(req.user);
+      if (!employee) {
+        employee = await Employee.create({ name: req.user.name || "", email: req.user.email, user: req.user._id, department: "Unassigned" });
+      }
       employeeId = employee._id;
+    }
+
+    if (!employeeId) {
+      return res.status(400).json({ message: "Employee is required" });
+    }
+
+    const startDate = new Date(req.body.startDate);
+    const endDate = new Date(req.body.endDate);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate < startDate) {
+      return res.status(400).json({ message: "Please provide a valid leave range" });
+    }
+
+    const employee = await Employee.findById(employeeId);
+    const days = countLeaveDays(startDate, endDate);
+    if (employee && employee.leaveBalance < days) {
+      return res.status(400).json({ message: "Insufficient leave balance" });
     }
 
     const leave = await Leave.create({ ...req.body, employee: employeeId, status: "Pending" });
     const populated = await leave.populate("employee", "name employeeId department");
+
+    await Notification.create({
+      employee: employeeId,
+      title: "Leave Submitted",
+      message: `Your ${leave.leaveType} leave request has been submitted for review.`,
+      type: "General",
+    });
 
     res.status(201).json({ message: "Leave request submitted", leave: populated });
   } catch (error) {

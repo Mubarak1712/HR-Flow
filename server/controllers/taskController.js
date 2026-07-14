@@ -5,8 +5,15 @@ const { getEmployeeForUser } = require("../utils/hrmsHelpers");
 // Create Task
 const createTask = async (req, res) => {
   try {
+    const comments = Array.isArray(req.body.comments)
+      ? req.body.comments
+      : req.body.comment
+        ? [{ text: req.body.comment, author: req.user?.name || "Admin", createdAt: new Date() }]
+        : [];
+
     const task = await Task.create({
       ...req.body,
+      comments,
       assignedBy: req.user._id,
       assignedTo: req.body.assignedTo || req.body.employee,
       employee: req.body.employee || req.body.assignedTo,
@@ -77,26 +84,39 @@ const getTaskById = async (req, res) => {
 // Update Task
 const updateTask = async (req, res) => {
   try {
+    const existingTask = await Task.findById(req.params.id);
+    if (!existingTask) {
+      return res.status(404).json({ message: "Task Not Found" });
+    }
+
+    let updatePayload = { ...req.body };
+
     if (req.user.role === "Employee") {
       const employee = await getEmployeeForUser(req.user);
-      const existingTask = await Task.findById(req.params.id);
       if (!employee || existingTask?.employee?.toString() !== employee._id.toString()) {
         return res.status(403).json({ message: "You can only update your own tasks" });
       }
 
-      req.body = {
+      const comments = Array.isArray(req.body.comments)
+        ? req.body.comments
+        : req.body.comment
+          ? [...(existingTask.comments || []), { text: req.body.comment, author: req.user?.name || "Employee", createdAt: new Date() }]
+          : existingTask.comments || [];
+
+      updatePayload = {
         status: req.body.status,
         actualHours: req.body.actualHours,
         remarks: req.body.remarks,
+        comments,
       };
     }
 
     const task = await Task.findByIdAndUpdate(
       req.params.id,
       {
-        ...req.body,
-        assignedTo: req.body.assignedTo || req.body.employee,
-        employee: req.body.employee || req.body.assignedTo,
+        ...updatePayload,
+        assignedTo: updatePayload.assignedTo || updatePayload.employee || existingTask.assignedTo,
+        employee: updatePayload.employee || updatePayload.assignedTo || existingTask.employee,
       },
       {
         new: true,

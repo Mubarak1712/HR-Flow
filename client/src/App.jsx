@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import Employees from "./pages/Employees";
 import Tasks from "./pages/Tasks";
 import Departments from "./pages/Departments";
@@ -11,8 +12,12 @@ import Leaves from "./pages/Leaves";
 import Salary from "./pages/Salary";
 import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
+import Profile from "./pages/Profile";
+import Reports from "./pages/Reports";
+import ForgotPassword from "./pages/ForgotPassword";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import RoleProtectedRoute from "./components/RoleProtectedRoute";
 
 function App() {
   return (
@@ -20,8 +25,20 @@ function App() {
       {/* Public Routes */}
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       {/* Protected Routes */}
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute>
+            <RoleProtectedRoute allowedRoles={["Admin"]}>
+              <AdminDashboard />
+            </RoleProtectedRoute>
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/dashboard"
         element={
@@ -35,7 +52,9 @@ function App() {
         path="/employees"
         element={
           <ProtectedRoute>
-            <Employees />
+            <RoleProtectedRoute allowedRoles={["Admin"]}>
+              <Employees />
+            </RoleProtectedRoute>
           </ProtectedRoute>
         }
       />
@@ -44,7 +63,9 @@ function App() {
         path="/tasks"
         element={
           <ProtectedRoute>
-            <Tasks />
+            <RoleProtectedRoute allowedRoles={["Admin", "Employee"]}>
+              <Tasks />
+            </RoleProtectedRoute>
           </ProtectedRoute>
         }
       />
@@ -53,7 +74,9 @@ function App() {
         path="/departments"
         element={
           <ProtectedRoute>
-            <Departments />
+            <RoleProtectedRoute allowedRoles={["Admin"]}>
+              <Departments />
+            </RoleProtectedRoute>
           </ProtectedRoute>
         }
       />
@@ -62,7 +85,9 @@ function App() {
         path="/attendance"
         element={
           <ProtectedRoute>
-            <Attendance />
+            <RoleProtectedRoute allowedRoles={["Admin", "Employee"]}>
+              <Attendance />
+            </RoleProtectedRoute>
           </ProtectedRoute>
         }
       />
@@ -71,7 +96,9 @@ function App() {
         path="/leaves"
         element={
           <ProtectedRoute>
-            <Leaves />
+            <RoleProtectedRoute allowedRoles={["Admin", "Employee"]}>
+              <Leaves />
+            </RoleProtectedRoute>
           </ProtectedRoute>
         }
       />
@@ -80,7 +107,9 @@ function App() {
         path="/salary"
         element={
           <ProtectedRoute>
-            <Salary />
+            <RoleProtectedRoute allowedRoles={["Admin", "Employee"]}>
+              <Salary />
+            </RoleProtectedRoute>
           </ProtectedRoute>
         }
       />
@@ -89,7 +118,9 @@ function App() {
         path="/settings"
         element={
           <ProtectedRoute>
-            <Settings />
+            <RoleProtectedRoute allowedRoles={["Admin"]}>
+              <Settings />
+            </RoleProtectedRoute>
           </ProtectedRoute>
         }
       />
@@ -98,7 +129,31 @@ function App() {
         path="/notifications"
         element={
           <ProtectedRoute>
-            <Notifications />
+            <RoleProtectedRoute allowedRoles={["Admin", "Employee"]}>
+              <Notifications />
+            </RoleProtectedRoute>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <RoleProtectedRoute allowedRoles={["Admin"]}>
+              <Reports />
+            </RoleProtectedRoute>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <RoleProtectedRoute allowedRoles={["Admin", "Employee"]}>
+              <Profile />
+            </RoleProtectedRoute>
           </ProtectedRoute>
         }
       />

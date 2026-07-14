@@ -5,23 +5,20 @@ import Layout from "../components/Layout";
 import PageShell from "../components/PageShell";
 import StatusBadge from "../components/StatusBadge";
 import TableShell from "../components/TableShell";
+import EmptyState from "../components/EmptyState";
 import api from "../services/api";
 
 function Leaves() {
+  const user = JSON.parse(localStorage.getItem("user") || "null");
   const [leaves, setLeaves] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [form, setForm] = useState({ employee: "", leaveType: "Casual", reason: "", startDate: "", endDate: "" });
-
-  useEffect(() => {
-    fetchLeaves();
-    fetchEmployees();
-  }, []);
 
   const fetchLeaves = async () => {
     try {
       const res = await api.get("/leaves");
       setLeaves(res.data.leaves || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load leaves");
     }
   };
@@ -30,10 +27,19 @@ function Leaves() {
     try {
       const res = await api.get("/employees");
       setEmployees(res.data.employees || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load employees");
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchLeaves();
+      void fetchEmployees();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -42,16 +48,29 @@ function Leaves() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/leaves", form);
+      const payload = { ...form };
+      if (user?.role !== "Admin") delete payload.employee;
+      await api.post("/leaves", payload);
       toast.success("Leave request submitted");
       setForm({ employee: "", leaveType: "Casual", reason: "", startDate: "", endDate: "" });
-      fetchLeaves();
+      await fetchLeaves();
     } catch (error) {
       toast.error(error.response?.data?.message || "Unable to submit leave");
     }
   };
 
   const approvedCount = leaves.filter((item) => item.status === "Approved").length;
+  const pendingCount = leaves.filter((item) => item.status === "Pending").length;
+
+  const handleReview = async (id, status) => {
+    try {
+      await api.put(`/leaves/${id}`, { status });
+      toast.success(`Leave ${status === "Approved" ? "approved" : "rejected"}`);
+      await fetchLeaves();
+    } catch (error) {
+      toast.error(error.response?.data?.message || `Unable to ${status.toLowerCase()} leave`);
+    }
+  };
 
   return (
     <Layout>
@@ -67,10 +86,12 @@ function Leaves() {
                 </div>
               </div>
               <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
-                <select name="employee" value={form.employee} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" required>
-                  <option value="">Select employee</option>
-                  {employees.map((emp) => (<option key={emp._id} value={emp._id}>{emp.name}</option>))}
-                </select>
+                {user?.role === "Admin" ? (
+                  <select name="employee" value={form.employee} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" required>
+                    <option value="">Select employee</option>
+                    {employees.map((emp) => (<option key={emp._id} value={emp._id}>{emp.name}</option>))}
+                  </select>
+                ) : null}
                 <select name="leaveType" value={form.leaveType} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400">
                   <option value="Casual">Casual</option>
                   <option value="Sick">Sick</option>
@@ -94,7 +115,7 @@ function Leaves() {
               </div>
               <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center gap-2 text-sm text-slate-500"><CalendarDays size={15} /> Pending</div>
-                <p className="mt-2 text-2xl font-semibold text-slate-900">{leaves.length - approvedCount}</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">{pendingCount}</p>
               </div>
             </div>
           </div>
@@ -105,18 +126,30 @@ function Leaves() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Employee</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Dates</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Reason</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
                 {leaves.length === 0 ? (
-                  <tr><td colSpan="3" className="px-6 py-8 text-center text-sm text-slate-500">No leave requests yet.</td></tr>
+                  <tr><td colSpan="5" className="px-6 py-8 text-center text-sm text-slate-500"><EmptyState title="No records found" description="No leave requests are available." /></td></tr>
                 ) : (
                   leaves.map((leave) => (
                     <tr key={leave._id} className="transition hover:bg-slate-50">
                       <td className="px-6 py-4 text-sm font-semibold text-slate-900">{leave.employee?.name || "—"}</td>
                       <td className="px-6 py-4 text-sm text-slate-600">{leave.leaveType}</td>
-                      <td className="px-6 py-4"><StatusBadge tone={leave.status === "Approved" ? "success" : leave.status === "Rejected" ? "danger" : "warning"}>{leave.status}</StatusBadge></td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{new Date(leave.startDate).toLocaleDateString()} — {new Date(leave.endDate).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{leave.reason}</td>
+                      <td className="px-6 py-4 flex items-center gap-3">
+                        <StatusBadge tone={leave.status === "Approved" ? "success" : leave.status === "Rejected" ? "danger" : "warning"}>{leave.status}</StatusBadge>
+                        {user?.role === "Admin" && leave.status === "Pending" ? (
+                          <div className="ml-2 flex gap-2">
+                            <button onClick={() => void handleReview(leave._id, "Approved") } className="rounded px-3 py-1 bg-green-600 text-white text-sm">Approve</button>
+                            <button onClick={() => void handleReview(leave._id, "Rejected") } className="rounded px-3 py-1 bg-red-600 text-white text-sm">Reject</button>
+                          </div>
+                        ) : null}
+                      </td>
                     </tr>
                   ))
                 )}

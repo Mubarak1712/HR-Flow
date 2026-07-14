@@ -41,15 +41,13 @@ const salarySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-salarySchema.pre("validate", function (next) {
+salarySchema.pre("validate", function () {
   this.netSalary =
     Number(this.baseSalary || 0) +
     Number(this.bonus || 0) +
     Number(this.allowance || 0) -
     Number(this.tax || 0) -
     Number(this.leaveDeduction || 0);
-
-  next();
 });
 
 module.exports = mongoose.model("Salary", salarySchema);

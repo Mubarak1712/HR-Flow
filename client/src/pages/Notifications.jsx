@@ -3,29 +3,34 @@ import toast from "react-hot-toast";
 import { BellRing, CheckCircle2, Sparkles } from "lucide-react";
 import Layout from "../components/Layout";
 import PageShell from "../components/PageShell";
+import EmptyState from "../components/EmptyState";
 import api from "../services/api";
 
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
   const fetchNotifications = async () => {
     try {
       const res = await api.get("/notifications");
       setNotifications(res.data.notifications || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load notifications");
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchNotifications();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const markRead = async (id) => {
     try {
       await api.put(`/notifications/${id}`);
       fetchNotifications();
-    } catch (error) {
+    } catch {
       toast.error("Unable to update notification");
     }
   };
@@ -51,10 +56,10 @@ function Notifications() {
 
           <div className="space-y-3">
             {notifications.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center text-sm text-slate-500">No notifications found.</div>
+              <EmptyState title="No records found" description="No notifications are available." />
             ) : (
               notifications.map((item) => (
-                <div key={item._id} className={`rounded-[22px] border p-4 transition ${item.read ? "border-slate-200 bg-white" : "border-indigo-100 bg-indigo-50/70"}`}>
+                <div key={item._id} className={`rounded-[22px] border p-4 shadow-sm transition ${item.read ? "border-slate-200 bg-white" : "border-indigo-100 bg-indigo-50/70"}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex gap-3">
                       <div className={`mt-0.5 rounded-2xl p-2 ${item.read ? "bg-slate-100 text-slate-600" : "bg-white text-indigo-600"}`}>

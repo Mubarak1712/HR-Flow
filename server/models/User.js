@@ -26,9 +26,22 @@ const userSchema = new mongoose.Schema(
       enum: ["Admin", "Employee"],
       default: "Employee",
     },
+    status: {
+      type: String,
+      enum: ["Active", "Inactive"],
+      default: "Active",
+    },
     employee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
+      default: null,
+    },
+    resetPasswordOtp: {
+      type: String,
+      default: null,
+    },
+    resetPasswordOtpExpiresAt: {
+      type: Date,
       default: null,
     },
   },

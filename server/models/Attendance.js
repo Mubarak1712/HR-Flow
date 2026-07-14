@@ -27,13 +27,11 @@ const attendanceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-attendanceSchema.pre("save", function (next) {
+attendanceSchema.pre("save", function () {
   if (this.checkIn && this.checkOut) {
     const diff = this.checkOut.getTime() - this.checkIn.getTime();
     this.workingHours = Math.max(Number((diff / 3600000).toFixed(2)), 0);
   }
-
-  next();
 });
 
 module.exports = mongoose.model("Attendance", attendanceSchema);

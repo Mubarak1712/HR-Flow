@@ -4,6 +4,7 @@ import { BadgeDollarSign, CircleDollarSign, Sparkles } from "lucide-react";
 import Layout from "../components/Layout";
 import PageShell from "../components/PageShell";
 import TableShell from "../components/TableShell";
+import EmptyState from "../components/EmptyState";
 import api from "../services/api";
 
 function Salary() {
@@ -11,28 +12,36 @@ function Salary() {
   const [employees, setEmployees] = useState([]);
   const [form, setForm] = useState({ employee: "", month: "", baseSalary: "", bonus: "", allowance: "", tax: "" });
 
-  useEffect(() => {
-    fetchSalaries();
-    fetchEmployees();
-  }, []);
-
   const fetchSalaries = async () => {
     try {
       const res = await api.get("/salary");
       setSalaries(res.data.salaries || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load salary records");
     }
   };
 
   const fetchEmployees = async () => {
     try {
-      const res = await api.get("/employees");
-      setEmployees(res.data.employees || []);
-    } catch (error) {
+      const res = await api.get("/employees?status=Active");
+      const activeEmployees = (res.data.employees || []).filter((emp) => {
+        const status = emp.status?.toLowerCase?.() || "";
+        return status === "active" || status === "";
+      });
+      setEmployees(activeEmployees);
+    } catch {
       toast.error("Failed to load employees");
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchSalaries();
+      void fetchEmployees();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -41,10 +50,18 @@ function Salary() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/salary", form);
+      const payload = {
+        ...form,
+        baseSalary: Number(form.baseSalary || 0),
+        bonus: Number(form.bonus || 0),
+        allowance: Number(form.allowance || 0),
+        tax: Number(form.tax || 0),
+      };
+      await api.post("/salary", payload);
       toast.success("Salary generated");
       setForm({ employee: "", month: "", baseSalary: "", bonus: "", allowance: "", tax: "" });
-      fetchSalaries();
+      await fetchSalaries();
+      await fetchEmployees();
     } catch (error) {
       toast.error(error.response?.data?.message || "Unable to generate salary");
     }
@@ -72,12 +89,12 @@ function Salary() {
                 </select>
                 <input type="month" name="month" value={form.month} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" required />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <input type="number" name="baseSalary" placeholder="Base salary" value={form.baseSalary} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" />
-                  <input type="number" name="bonus" placeholder="Bonus" value={form.bonus} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" />
+                  <input type="number" name="baseSalary" placeholder="Base salary" value={form.baseSalary} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" min="0" />
+                  <input type="number" name="bonus" placeholder="Bonus" value={form.bonus} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" min="0" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <input type="number" name="allowance" placeholder="Allowance" value={form.allowance} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" />
-                  <input type="number" name="tax" placeholder="Tax" value={form.tax} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" />
+                  <input type="number" name="allowance" placeholder="Allowance" value={form.allowance} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" min="0" />
+                  <input type="number" name="tax" placeholder="Tax" value={form.tax} onChange={handleChange} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-indigo-400" min="0" />
                 </div>
                 <button className="rounded-2xl bg-gradient-to-r from-emerald-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95">Generate salary</button>
               </form>
@@ -106,7 +123,7 @@ function Salary() {
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
                 {salaries.length === 0 ? (
-                  <tr><td colSpan="3" className="px-6 py-8 text-center text-sm text-slate-500">No salary records yet.</td></tr>
+                  <tr><td colSpan="3" className="px-6 py-8 text-center text-sm text-slate-500"><EmptyState title="No records found" description="No salary records are available yet." /></td></tr>
                 ) : (
                   salaries.map((salary) => (
                     <tr key={salary._id} className="transition hover:bg-slate-50">

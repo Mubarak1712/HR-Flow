@@ -52,6 +52,23 @@ const taskSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    comments: [
+      {
+        text: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        author: {
+          type: String,
+          default: "System",
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     attachments: [
       {
         name: String,
@@ -65,7 +82,7 @@ const taskSchema = new mongoose.Schema(
   }
 );
 
-taskSchema.pre("validate", function (next) {
+taskSchema.pre("validate", function () {
   if (!this.assignedTo && this.employee) {
     this.assignedTo = this.employee;
   }
@@ -77,8 +94,6 @@ taskSchema.pre("validate", function (next) {
   if (this.status === "Completed" && !this.completedDate) {
     this.completedDate = new Date();
   }
-
-  next();
 });
 
 module.exports = mongoose.model("Task", taskSchema);

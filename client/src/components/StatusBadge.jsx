@@ -7,7 +7,7 @@ const variants = {
 };
 
 function StatusBadge({ children, tone = "default" }) {
-  return <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${variants[tone] || variants.default}`}>{children}</span>;
+  return <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm backdrop-blur ${variants[tone] || variants.default}`}>{children}</span>;
 }
 
 export default StatusBadge;
